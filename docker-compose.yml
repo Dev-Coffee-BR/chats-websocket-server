@@ -1,0 +1,15 @@
+version: '3.8'
+
+services: 
+  web: 
+    entrypoint: php websocket.php
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: websocket
+    ports:
+      - "80:80"
+    volumes: 
+      - .:/opt/www
+    networks:
+      - default
