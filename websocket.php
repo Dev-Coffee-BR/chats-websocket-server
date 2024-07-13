@@ -54,10 +54,6 @@ class Chat
                     $server->push($clientFd, json_encode($msg));
                 }
             }
-
-            foreach ($this->clients as $clientFd => $clientRequest) {
-                $server->push($clientFd, json_encode($msg));
-            }
         } catch (\Throwable $th) {
             // Handle error
         }
