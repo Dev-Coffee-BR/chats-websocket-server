@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
@@ -9,31 +8,30 @@ class Chat
 {
     protected $clients;
     protected $messagesCount;
+    protected $database;
 
     public function __construct() {
         $this->messagesCount = 0;
         $this->clients = [];
+
     }
 
     public function onOpen(Server $server, Request $request) {
         $fd = $request->fd;
+        $request->room = $request->get['room'];
         $this->clients[$fd] = $request;
         
         $name = $request->header['cookie'] ?? "Anonimo{$fd}";
         $name = explode("@", $name);
         $name = isset($name[1]) ? $name[1] : $name[0];
-
-
-        echo "New connection! ({$name})\n";
     }
 
     public function onMessage(Server $server, Frame $frame) {
         try {
             $msg = json_decode($frame->data, true);
-
             $name = $msg['name'] ?? "Anonimo{$frame->fd}";
             $msg = [
-                "nome" => $name,
+                "name" => $name,
                 "msg" => trim($msg['msg'])
             ];
 
@@ -41,27 +39,28 @@ class Chat
                 $msg['msg'] = "(Esta mensagem está indisponível)";
                 $msg['type'] = "error";
             }
-            if (strlen($msg['nome']) > 100) {
-                $msg['nome'] = "Anonimo{$frame->fd}";
+
+            if (strlen($msg['name']) > 100) {
+                $msg['name'] = "Anonimo{$frame->fd}";
             }
+            
             if (strlen($msg['msg']) === 0) {
                 $msg['msg'] = "(Esta mensagem está indisponível)";
                 $msg['type'] = "error";
             }
 
             foreach ($this->clients as $clientFd => $clientRequest) {
-                if ($frame->fd !== $clientFd) {
+                if ($frame->fd !== $clientFd && $clientRequest->room == $this->clients[$frame->fd]->room) {
                     $server->push($clientFd, json_encode($msg));
                 }
             }
+
         } catch (\Throwable $th) {
-            // Handle error
         }
     }
 
     public function onClose(Server $server, int $fd) {
         unset($this->clients[$fd]);
-
         $name = $this->clients[$fd]->header['cookie'] ?? "Anonimo{$fd}";
         $name = explode("@", $name);
         $name = isset($name[1]) ? $name[1] : $name[0];
