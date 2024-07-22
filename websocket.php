@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
@@ -28,7 +29,6 @@ class Chat
 
     public function onMessage(Server $server, Frame $frame) {
         try {
-            exec("php Hook.php");
             $msg = json_decode($frame->data, true);
 
             $name = $msg['name'] ?? "Anonimo{$frame->fd}";

@@ -42,6 +42,6 @@ WORKDIR /opt/www
 
 # RUN composer install
 
-EXPOSE 9501
+EXPOSE 8000
 
 ENTRYPOINT [ "php", "websocket.php"]
