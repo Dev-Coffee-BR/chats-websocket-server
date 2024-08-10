@@ -24,11 +24,32 @@ class Chat
         $name = $request->header['cookie'] ?? "Anonimo{$fd}";
         $name = explode("@", $name);
         $name = isset($name[1]) ? $name[1] : $name[0];
+
+        // $server->push($fd, json_encode([
+        //     "name" => "Servidor",
+        //     "msg" => [
+        //         "room" => "SALA 1",
+        //         "id" => "room0",
+        //         "messages" => [
+        //             [
+        //                 "horario" => "10:15",
+        //                 "conteudo" => "O que você achou do novo recurso da AWS?!",
+        //                 "verde" => false
+        //             ],
+        //             [
+        //                 "horario" => "10:15",
+        //                 "conteudo" => "?!ssaasdasasddas",
+        //                 "verde" => false
+        //             ]
+        //         ]
+        //     ],
+        //     "type" => "initials_messages"
+        // ]));
     }
 
     public function onMessage(Server $server, Frame $frame) {
+        $msg = (array) json_decode(openssl_decrypt($frame->data, "aes-128-cbc", "1234567890123456", 0, "1234567890123456"));
         try {
-            $msg = json_decode($frame->data, true);
             $name = $msg['name'] ?? "Anonimo{$frame->fd}";
             $msg = [
                 "name" => $name,
@@ -51,7 +72,7 @@ class Chat
 
             foreach ($this->clients as $clientFd => $clientRequest) {
                 if ($frame->fd !== $clientFd && $clientRequest->room == $this->clients[$frame->fd]->room) {
-                    $server->push($clientFd, json_encode($msg));
+                    $server->push($clientFd, openssl_encrypt(json_encode($msg), "aes-128-cbc", "1234567890123456", 0, "1234567890123456"));
                 }
             }
 
